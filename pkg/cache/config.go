@@ -8,15 +8,15 @@ import (
 
 type Client struct {
 	Options *redis.Options
-	ctx context.Context
+	ctx     context.Context
 }
 
-func NewRedisConfig(Host, Port, Password string, DB int) *Client{
+func NewRedisConfig(Host, Port, Password string, DB int) *Client {
 	return &Client{
 		Options: &redis.Options{
-			Addr: Host + ":" + Port,
+			Addr:     Host + ":" + Port,
 			Password: Password,
-			DB: DB,	
+			DB:       DB,
 		},
 	}
 }

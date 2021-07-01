@@ -16,7 +16,7 @@ type Store struct {
 	RedisFeautures
 }
 
-func NewRedisStore(rdb *redis.Client, ctx context.Context) *Store{
+func NewRedisStore(rdb *redis.Client, ctx context.Context) *Store {
 	return &Store{
 		RedisFeautures: NewRedisFeatures(rdb, ctx),
 	}

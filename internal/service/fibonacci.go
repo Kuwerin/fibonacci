@@ -8,18 +8,16 @@ import (
 
 type FibonacciService struct {
 	cache *cache.Store
-	math *math_custom.MathFeautures
+	math  *math_custom.MathFeautures
 }
 
-
-func NewFibonacciService(cache *cache.Store) *FibonacciService{
+func NewFibonacciService(cache *cache.Store) *FibonacciService {
 	return &FibonacciService{
-		cache:cache,
-		math: math_custom.NewMathFeautures(cache),
+		cache: cache,
+		math:  math_custom.NewMathFeautures(cache),
 	}
 }
 
-
 func (s FibonacciService) GetSlice(body model.Fibonacci) []uint64 {
-	return s.math.GetSlice(body.X, body.Y) 
+	return s.math.GetSlice(body.X, body.Y)
 }

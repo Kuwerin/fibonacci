@@ -9,7 +9,6 @@ type Fibonacci interface {
 	GetSlice(body model.Fibonacci) []uint64
 }
 
-
 type Service struct {
 	Fibonacci
 }

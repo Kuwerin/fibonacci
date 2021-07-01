@@ -9,11 +9,10 @@ import (
 
 type Features struct {
 	ctx context.Context
-	rdb redis.Client	
+	rdb redis.Client
 }
 
-
-func NewRedisFeatures(rdb *redis.Client, ctx context.Context) *Features{
+func NewRedisFeatures(rdb *redis.Client, ctx context.Context) *Features {
 	return &Features{
 		ctx: ctx,
 		rdb: *rdb,

@@ -10,7 +10,7 @@ type MathFeautures struct {
 	Fibonacci
 }
 
-func NewMathFeautures(cache *cache.Store) *MathFeautures{
+func NewMathFeautures(cache *cache.Store) *MathFeautures {
 	return &MathFeautures{
 		Fibonacci: NewFibonacciService(cache),
 	}

@@ -3,10 +3,18 @@
 
 Не забудьте добавить файл .env с примера env.local или env.docker
 
+### Для запуска тестов:
+
+make test
+
+### Для локального запуска:
+
+make run
+
 ### Для запуска приложения с  docker:
 
 ```
-docker-compose up -d --build
+make run-docker
 ```
 
 
