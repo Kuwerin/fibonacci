@@ -1,18 +1,38 @@
-FROM golang:latest as build
+# Proto compiling stage
+FROM namely/protoc-all as proto-compiler
 
-WORKDIR /go/src/app
+WORKDIR /app
 
-COPY . .
-# RUN go test -v -race -timeout 30s ./...
+COPY proto/ /app/proto/
 
-RUN mkdir .bin
-RUN  go mod download && CGO_ENABLED=0 GOOS=linux go build -o ./.bin/app ./cmd/app/main.go
+RUN mkdir -p compiled/fibonaccipb
+
+RUN protoc --proto_path=/app/proto/:/opt/include/ \
+    --go_out=/app/compiled/fibonaccipb \
+    --go-grpc_out=/app/compiled/fibonaccipb \
+    /app/proto/fibonacci_service.proto
+
+# Build stage
+FROM golang:1.17-stretch as build-stage
 
 
-FROM alpine:latest as go-bin
+WORKDIR /app
 
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
+COPY . /app
 
-COPY --from=build /go/src/app/.bin/app .
-COPY --from=build /go/src/app/configs/* /root/configs/
+# Copy compiled files for geo service
+COPY --from=proto-compiler /app/compiled/fibonaccipb /app/pkg/transport/grpc/fibonaccipb
+
+ENV CGO_ENABLED=0
+RUN go build -o /app/build/svc-fibonacci ./main.go
+
+# Runtime stage
+FROM alpine
+
+COPY --from=build-stage /app/build/svc-fibonacci /bin/svc-fibonacci
+
+EXPOSE 5010
+EXPOSE 5000
+
+ENTRYPOINT ["/bin/svc-fibonacci"]
+

@@ -1,0 +1,18 @@
+syntax="proto3";
+
+option go_package = "./fibonaccipb";
+
+package proto;
+
+service FibonacciService {
+    rpc GetFibonacciSlice(GetFibonacciSliceRequest) returns (GetFibonacciSliceResponse) {};
+}
+
+message GetFibonacciSliceRequest{
+    uint64 start = 1;
+    uint64 end = 2;
+}
+
+message GetFibonacciSliceResponse{
+    repeated uint64 fibonacci_number = 1;
+}
