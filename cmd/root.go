@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/go-kit/kit/log"
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,10 +38,6 @@ var (
 	cfgRedisPort int
 
 	cfgRedisHost string
-	logger       *log.Logger = log.New(
-		os.Stdout, "[svc-fibonacci]: ",
-		log.LstdFlags|log.Lmsgprefix,
-	)
 )
 
 var rootCmd = &cobra.Command{
@@ -86,12 +82,28 @@ func run() {
 	redisPort := viper.GetInt("redis-port")
 	grpcPort := viper.GetInt("grpc-port")
 
-	redisOpts := redis.Options{
-		Addr: fmt.Sprintf("%s:%d", redisHost, redisPort),
+	// Create the logger
+	var logger log.Logger
+	{
+		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
+		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+		logger.Log("app", os.Args[0], "event", "starting")
 	}
-	redisClient := redis.NewClient(&redisOpts)
 
-	rep := repository.MakeRepository(redisClient)
+	// Create the repository
+	var rep *repository.Repository
+	{
+		log.With(logger, "repository", "redis")
+
+		redisOpts := redis.Options{
+			Addr: fmt.Sprintf("%s:%d", redisHost, redisPort),
+		}
+
+		redisClient := redis.NewClient(&redisOpts)
+
+		rep = repository.MakeRepository(logger, redisClient)
+	}
+
 	service := service.NewService(rep)
 
 	go func() {
@@ -104,11 +116,11 @@ func run() {
 		// Create gRPC-server
 		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 		if err != nil {
-			logger.Fatalf("an error occurred while trying to listen port: %s", err.Error())
+			logger.Log("error", err)
 		}
 
 		if err := grpcServer.Serve(ln); err != nil {
-			logger.Fatal("failed to start GRPC server: ", err.Error())
+			logger.Log("error", err)
 		}
 	}()
 
@@ -121,25 +133,25 @@ func run() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		signal := <-quit
 
-		logger.Printf("received operating system signal: %v", signal)
+		logger.Log("os signal", signal)
 
 		if err := srv.Shutdown(context.Background()); err != nil {
-			logger.Printf("server shutdown failed: %s", err.Error())
+			logger.Log("error", err)
 			os.Exit(1)
 		}
 
 		close(idleConnsClosed)
-		logger.Println("server stopped")
+		logger.Log("event", "server stopped")
 	}()
 
-	logger.Println("server started")
+	logger.Log("event", "server started")
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", httpPort), srv); err != http.ErrServerClosed {
-		logger.Fatalf("an error occurred while trying to listen and serve: %s", err.Error())
+		logger.Log("error", err)
 		os.Exit(1)
 	}
 
 	<-idleConnsClosed
 
-	logger.Println("server exited normally")
+	logger.Log("event", "server exited normally")
 }
