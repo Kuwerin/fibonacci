@@ -112,7 +112,7 @@ func run() {
 	go func() {
 		reflection.Register(grpcServer)
 
-		fibonaccipb.RegisterFibonacciServiceServer(grpcServer, grpctransport.NewGRPCServer(service))
+		fibonaccipb.RegisterFibonacciServiceServer(grpcServer, grpctransport.NewGRPCServer(logger, service))
 
 		// Create gRPC-server
 		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
@@ -125,7 +125,7 @@ func run() {
 		}
 	}()
 
-	srv := httptransport.NewHTTPServer(httpPort, service)
+	srv := httptransport.NewHTTPServer(httpPort, logger, service)
 
 	idleConnsClosed := make(chan struct{})
 
@@ -156,7 +156,7 @@ func run() {
 
 	logger.Log("event", "server started")
 
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed{
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Log("error", err)
 		os.Exit(1)
 	}
