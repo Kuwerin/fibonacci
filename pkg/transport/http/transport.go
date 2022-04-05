@@ -14,15 +14,15 @@ import (
 	"github.com/Kuwerin/fibonacci/pkg/transport/grpc/fibonaccipb"
 )
 
-type HTTPServer struct {
+type httpServer struct {
 	router   *mux.Router
 	services *service.Service
 	logger   log.Logger
 	http.Server
 }
 
-func NewHTTPServer(port int, logger log.Logger, services *service.Service) *HTTPServer {
-	s := &HTTPServer{
+func NewHTTPServer(port int, logger log.Logger, services *service.Service) *httpServer {
+	s := &httpServer{
 		router:   mux.NewRouter(),
 		services: services,
 		logger:   logger,
@@ -35,11 +35,11 @@ func NewHTTPServer(port int, logger log.Logger, services *service.Service) *HTTP
 	return s
 }
 
-func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s *HTTPServer) calculateFibonacci(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) calculateFibonacci(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func(begin time.Time) {
 		s.logger.Log(
@@ -64,11 +64,11 @@ func (s *HTTPServer) calculateFibonacci(w http.ResponseWriter, r *http.Request) 
 	s.respond(w, r, http.StatusOK, res)
 }
 
-func (s *HTTPServer) newErrorResponse(w http.ResponseWriter, r *http.Request, code int, err error) {
+func (s *httpServer) newErrorResponse(w http.ResponseWriter, r *http.Request, code int, err error) {
 	s.respond(w, r, code, map[string]string{"error": err.Error()})
 }
 
-func (s *HTTPServer) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+func (s *httpServer) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
 	if data != nil {
 		w.WriteHeader(code)
 
@@ -80,14 +80,14 @@ func (s *HTTPServer) respond(w http.ResponseWriter, r *http.Request, code int, d
 	}
 }
 
-func (s *HTTPServer) appendJsonHeader(next http.Handler) http.Handler {
+func (s *httpServer) appendJsonHeader(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(rw, r)
 	})
 }
 
-func (s *HTTPServer) configureRouter() {
+func (s *httpServer) configureRouter() {
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	s.router.Use(s.appendJsonHeader)
 	s.router.HandleFunc("/fibonacci", s.calculateFibonacci).Methods("POST")
