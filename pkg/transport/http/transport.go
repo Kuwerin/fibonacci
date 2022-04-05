@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/handlers"
@@ -17,12 +18,15 @@ type HTTPServer struct {
 	http.Server
 }
 
-func NewHTTPServer(services *service.Service) *HTTPServer {
+func NewHTTPServer(port int, services *service.Service) *HTTPServer {
 	s := &HTTPServer{
 		router:   mux.NewRouter(),
 		services: services,
 	}
 	s.configureRouter()
+
+	s.Server.Addr = fmt.Sprintf(":%d", port)
+	s.Server.Handler = s.router
 
 	return s
 }
