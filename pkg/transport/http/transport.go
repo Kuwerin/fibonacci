@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
@@ -15,13 +17,15 @@ import (
 type HTTPServer struct {
 	router   *mux.Router
 	services *service.Service
+	logger   log.Logger
 	http.Server
 }
 
-func NewHTTPServer(port int, services *service.Service) *HTTPServer {
+func NewHTTPServer(port int, logger log.Logger, services *service.Service) *HTTPServer {
 	s := &HTTPServer{
 		router:   mux.NewRouter(),
 		services: services,
+		logger:   logger,
 	}
 	s.configureRouter()
 
@@ -36,6 +40,16 @@ func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) calculateFibonacci(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"entity", "transport",
+			"type", "http",
+			"error", err,
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+
 	req := new(fibonaccipb.GetFibonacciSliceRequest)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.newErrorResponse(w, r, http.StatusBadRequest, err)
