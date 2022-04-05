@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/go-kit/kit/log"
@@ -106,9 +107,9 @@ func run() {
 
 	service := service.NewService(rep)
 
-	go func() {
-		grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer()
 
+	go func() {
 		reflection.Register(grpcServer)
 
 		fibonaccipb.RegisterFibonacciServiceServer(grpcServer, grpctransport.NewGRPCServer(service))
@@ -124,9 +125,13 @@ func run() {
 		}
 	}()
 
-	srv := httptransport.NewHTTPServer(service)
+	srv := httptransport.NewHTTPServer(httpPort, service)
 
 	idleConnsClosed := make(chan struct{})
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 
 	go func() {
 		quit := make(chan os.Signal, 1)
@@ -140,18 +145,25 @@ func run() {
 			os.Exit(1)
 		}
 
+		grpcServer.GracefulStop()
+
 		close(idleConnsClosed)
+
+		wg.Done()
+
 		logger.Log("event", "server stopped")
 	}()
 
 	logger.Log("event", "server started")
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", httpPort), srv); err != http.ErrServerClosed {
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed{
 		logger.Log("error", err)
 		os.Exit(1)
 	}
 
 	<-idleConnsClosed
+
+	wg.Wait()
 
 	logger.Log("event", "server exited normally")
 }
