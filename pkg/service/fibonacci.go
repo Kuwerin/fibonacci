@@ -27,6 +27,7 @@ func (s FibonacciService) GetSlice(req *fibonaccipb.GetFibonacciSliceRequest) (*
 
 		fibonacciNum, err := s.rep.Fibonacci.Find(i)
 		if err != nil {
+			fibonacciNum.Key = i
 			fibonacciNum.Value = countFibonacci(i)
 
 			if err := s.rep.Fibonacci.Save(fibonacciNum); err != nil {
