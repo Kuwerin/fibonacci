@@ -9,21 +9,21 @@ import (
 	"github.com/go-kit/log"
 )
 
-type GRPCServer struct {
+type grpcServer struct {
 	service *service.Service
 	logger  log.Logger
 
 	fibonaccipb.UnimplementedFibonacciServiceServer
 }
 
-func NewGRPCServer(logger log.Logger, service *service.Service) *GRPCServer {
-	return &GRPCServer{
+func NewGRPCServer(logger log.Logger, service *service.Service) *grpcServer {
+	return &grpcServer{
 		service: service,
 		logger:  logger,
 	}
 }
 
-func (s *GRPCServer) GetFibonacciSlice(ctx context.Context, req *fibonaccipb.GetFibonacciSliceRequest) (res *fibonaccipb.GetFibonacciSliceResponse, err error) {
+func (s *grpcServer) GetFibonacciSlice(ctx context.Context, req *fibonaccipb.GetFibonacciSliceRequest) (res *fibonaccipb.GetFibonacciSliceResponse, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"entity", "transport",
